@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import { Text } from 'react-native';
 import firebase from 'firebase';
-import { Button, Card, CardSection, Input } from './common';
+import { Button, Card, CardSection, Input, Spinner } from './common';
 
 class LoginForm extends Component {
-  state = { email: '', password: '', error: '' };
+  state = { email: '', password: '', error: '', loading: false };
 
   //TextInput > User taps then Types > onChangeText called
   //'setState' is called with new text
@@ -19,15 +19,40 @@ class LoginForm extends Component {
   onButtonPress() {
     const { email, password } = this.state;
 
-    this.setState({ error: '' });
+    this.setState({ error: '', loading: true });
 
     firebase.auth().signInWithEmailAndPassword(email, password)
+      .then(this.onLoginSuccess.bind(this)) //we have to bind this because we don't know when the promise will be returned in the future... we have to bind the context to onButtonPress()
       .catch(() => {
         firebase.auth().createUserWithEmailAndPassword(email, password)
-          .catch(() => {
-            this.setState({ error: 'Authentication Failed.' });
-          });
+          .then(this.onLoginSuccess.bind(this))
+          .catch(this.onLoginFail.bind(this));
       });
+  };
+
+  onLoginFail() {
+    this.setState({ error: 'Authentication Failed', loading: false });
+  }
+
+  onLoginSuccess() {
+    this.setState({
+      email: '',
+      password: '',
+      loading: false,
+      error: '',
+    });
+  };
+
+  renderButton() {
+    if (this.state.loading) {
+      return <Spinner size='small' />;
+    };
+
+    return (
+      <Button onPress={this.onButtonPress.bind(this)}>
+        Log in
+      </Button>
+    );
   };
 
   render() {
@@ -56,9 +81,7 @@ class LoginForm extends Component {
         </Text>
 
         <CardSection>
-          <Button onPress={this.onButtonPress.bind(this)}>
-            Log in
-          </Button>
+          {this.renderButton()}
         </CardSection>
       </Card>
     );
@@ -72,8 +95,5 @@ const styles = {
     color: 'red',
   },
 };
-
-//onChangeText={password => this.setState({ password })}
-
 
 export default LoginForm;
