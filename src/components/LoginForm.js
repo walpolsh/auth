@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
+import { Text } from 'react-native';
+import firebase from 'firebase';
 import { Button, Card, CardSection, Input } from './common';
 
 class LoginForm extends Component {
-  state = { email: '', password: '' };
+  state = { email: '', password: '', error: '' };
 
   //TextInput > User taps then Types > onChangeText called
   //'setState' is called with new text
@@ -13,6 +15,18 @@ class LoginForm extends Component {
   //We use this.setState to change the value of TextInput
   //the text exists as a piece of state on our component
   //secureTextEntry is the same as secureTextEntry={true}, boolean implied
+
+  onButtonPress() {
+    const { email, password } = this.state;
+
+    firebase.auth().signInWithEmailAndPassword(email, password)
+      .catch(() => {
+        firebase.auth().createUserWithEmailAndPassword(email, password)
+          .catch(() => {
+            this.setState({ error: 'Authentication Failed.' });
+          });
+      });
+  };
 
   render() {
     return (
@@ -35,8 +49,12 @@ class LoginForm extends Component {
           />
         </CardSection>
 
+        <Text style={styles.errorTextStyle}>
+          {this.state.error}
+        </Text>
+
         <CardSection>
-          <Button>
+          <Button onPress={this.onButtonPress.bind(this)}>
             Log in
           </Button>
         </CardSection>
@@ -44,6 +62,14 @@ class LoginForm extends Component {
     );
   }
 }
+
+const styles = {
+  errorTextStyle: {
+    fontSize: 20,
+    alignSelf: center,
+    color: 'red',
+  },
+};
 
 //onChangeText={password => this.setState({ password })}
 
